@@ -36,7 +36,7 @@ After the first Worker deployment, copy the HTTPS Worker origin, for example `ht
 
 For a one-device test, open Kebab Rush once with `?api=<encoded-worker-origin>` appended to the game URL. The client stores that origin locally and uses it on later visits.
 
-For the public release, put the Worker origin in the `kebab-rush-api` meta tag in `index.html`, then redeploy GitHub Pages. Do not put Cloudflare tokens, database IDs or other secrets in the frontend.
+For the public release, add an Actions repository **variable** named `KEBAB_RUSH_API_URL` containing the HTTPS Worker origin (no path). The Pages workflow validates the API and injects the origin into the build automatically. Rerun the cloud API workflow to verify D1 and CORS, then run **Build and deploy Kebab Rush**. Do not put Cloudflare tokens, database IDs or other secrets in the frontend.
 
 ## API routes
 
@@ -53,3 +53,13 @@ For the public release, put the Worker origin in the `kebab-rush-api` meta tag i
 ## Playtest security note
 
 This is a game account system, not an identity provider. PINs are hashed and sessions are server-side, but the first live playtest still uses client-reported gameplay scores with server-side bounds. Stronger anti-cheat should move scoring events or signed shift summaries to the server before any competitive/prize leaderboard is introduced.
+
+## Release order
+
+1. Add the three Actions secrets above. Store tokens only in GitHub Secrets, never in chat or source files.
+2. Merge PR #12 after CI passes. The API workflow then applies the idempotent schema and deploys the Worker; Pages can remain in local mode until its API variable is set.
+3. Copy the deployed Worker origin from the deployment log into the `KEBAB_RUSH_API_URL` repository variable.
+4. Run **Deploy Kebab Rush cloud API** on `main` again. Its verification step checks the database-backed health endpoint, leaderboard, and GitHub Pages CORS headers.
+5. Run **Build and deploy Kebab Rush** on `main` to connect the public client.
+
+Deployments are serialized so two runs cannot modify D1 concurrently. A missing secret fails before remote changes. Applying the existing schema is additive (`CREATE ... IF NOT EXISTS`); future schema alterations need explicit migrations.
