@@ -16,9 +16,9 @@ Kebab Rush v0.3 keeps the static game on GitHub Pages and runs accounts, cloud s
 
 ## Cloudflare resources
 
-Create one D1 database named `kebab-rush-db` and note its database ID.
+Create one D1 database named `kebab-rush-db` and note its database ID. For Sydney/Australian playtesting, Cloudflare's D1 creation flow supports an Oceania location hint if you want to keep the primary database close to the first player base.
 
-Create a Cloudflare API token with the minimum permissions needed to deploy Workers and edit the D1 database. Note the Cloudflare account ID.
+Create a scoped Cloudflare API token for this project. It needs permission to deploy/edit Workers and **D1 Edit** permission to apply the remote schema. Restrict the token to the specific Cloudflare account wherever possible. Note the Cloudflare account ID.
 
 ## GitHub Actions secrets
 
@@ -28,7 +28,7 @@ In the Kebab-Rush repository, add these Actions secrets:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_D1_DATABASE_ID`
 
-The `Deploy Kebab Rush cloud API` workflow will substitute the D1 database ID into a temporary Wrangler config, apply `server/schema.sql`, validate the Worker and deploy `server/worker.js`.
+The `Deploy Kebab Rush cloud API` workflow will substitute the D1 database ID into a temporary Wrangler config, validate the Worker, apply `server/schema.sql` to the remote D1 database, then deploy `server/worker.js`.
 
 ## Connect the website to the deployed API
 
