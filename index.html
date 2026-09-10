@@ -1,1 +1,58 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071c2b"><title>Kebab Rush · Australia Edition</title><link rel="stylesheet" href="/style.css"></head><body><main><header><div class="brand">KEBAB <span>RUSH</span><small>AUSTRALIA EDITION 🇦🇺</small></div><div class="hud"><b id="wallet">$0</b><span>Shop Lv <b id="level">1</b></span></div></header><section class="shop"><div class="sign"><b id="shopName">Ikhwam's Kebabs</b><small>SYDNEY · OPEN LATE</small></div><div class="scene"><div class="street">SYDNEY</div><div class="counter"><div class="rotisserie">🥙<span>🔥</span></div><div class="operator">👨🏽‍🍳<small id="operatorName">IKHWAM</small></div><div class="fridge">🥤<br>🥤<br>🥤</div></div><div id="customers" class="customers"></div></div><div class="stats"><div><small>TAKINGS</small><b id="takings">$0</b></div><div><small>TIME</small><b id="time">90s</b></div><div><small>SERVED</small><b id="served">0</b></div><div><small>MISSED</small><b id="missed">0/3</b></div></div><div id="event" class="event">FRIDAY NIGHT · SYDNEY</div><h2>PREP STATIONS</h2><div id="menu" class="menu"></div><div class="tray"><div><small>YOUR BENCH</small><div id="tray">Tap a station to prepare food</div></div><button id="clear">Clear</button></div><p id="feedback">Ready when you are, boss.</p><button id="start" class="primary">OPEN SHOP →</button></section><section class="roadmap"><b>From the local kebab shop to a national empire.</b><span>Sydney → Melbourne → Brisbane → Gold Coast → Adelaide → Perth</span></section></main><div id="golden" class="overlay" hidden><div class="modal"><small>RARE ORDER</small><h1>🏆 GOLDEN HSP</h1><p>Build the legendary HSP. Stop the sauce meter in the green zone three times.</p><div class="hsp">🍟🥩🧀</div><div class="meter"><i id="zone"></i><b id="marker"></b></div><strong id="goldScore">Pour 1 / 3</strong><button id="pour" class="primary">SAUCE!</button></div></div><script type="module" src="/game.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07151f">
+  <meta name="description" content="Run a late-night Australian kebab shop in Kebab Rush: Australia Edition.">
+  <title>Kebab Rush · Australia Edition</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="game-shell">
+  <header class="topbar">
+    <div class="brand">KEBAB <span>RUSH</span><small>AUSTRALIA EDITION 🇦🇺</small></div>
+    <div class="top-actions">
+      <button id="customise" class="chip">My Operator</button>
+      <button id="upgradesOpen" class="chip">Upgrades</button>
+      <div class="hud"><b id="wallet">$0</b><span>Shop Lv <b id="level">1</b></span></div>
+    </div>
+  </header>
+  <section class="shop-panel">
+    <div class="shop-sign" id="shopSign"><div><b id="shopName">Ikhwam's Kebabs</b><small>SYDNEY · OPEN LATE</small></div><span id="sponsorBadge">LOCAL SHOP</span></div>
+    <section class="scene" aria-label="Night-time suburban Australian kebab shop">
+      <div class="night-sky"><i></i><i></i><i></i><i></i></div>
+      <div class="street-strip"><span>SYDNEY</span><span class="streetlight"></span></div>
+      <div class="shop-window"><span>OPEN</span><small>KEBABS · HSP · CHIPS</small></div>
+      <div class="awning"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="interior">
+        <div class="back-wall">
+          <div class="menu-board"><span>KEBAB $14</span><span>HSP $18</span><span>CHIPS $7</span></div>
+          <div class="drink-fridge"><b>ICE COLD</b><span>🥤 🥤</span><span>🥤 🥤</span></div>
+          <div class="rotisserie-station"><small>ROTISSERIE</small><div class="rotisserie"><span class="heater">🔥</span><span class="meat"></span><span class="knife">🔪</span></div></div>
+        </div>
+        <div class="service-line">
+          <div class="ingredient-rail"><span>🥬</span><span>🍅</span><span>🧅</span><span>🧀</span><span>🥫</span></div>
+          <div class="operator-zone"><div id="operatorAvatar" class="operator-avatar apron-red hat-cap skin-tan"><span class="hat"></span><span class="hair"></span><span class="head"><i class="glasses"></i></span><span class="body"></span><span class="apron"></span></div><small id="operatorName">IKHWAM</small></div>
+          <div class="counter-front"><span>THANKS<br>FOR SUPPORTING<br>LOCAL</span></div>
+        </div>
+        <div id="customers" class="customers" aria-live="polite"></div>
+        <div class="dining-area" aria-label="Visible dining tables"><div class="table"><span>🥤</span><span class="chair left"></span><span class="chair right"></span></div><div class="table"><span>🍟</span><span class="chair left"></span><span class="chair right"></span></div></div>
+      </div>
+    </section>
+    <div class="stats"><div><small>TAKINGS</small><b id="takings">$0</b></div><div><small>TIME</small><b id="time">90s</b></div><div><small>SERVED</small><b id="served">0</b></div><div><small>MISSED</small><b id="missed">0/3</b></div></div>
+    <div id="event" class="event">FRIDAY NIGHT · SYDNEY</div>
+    <div class="section-head"><h2>PREP STATIONS</h2><small>Tap to cook · serve matching orders</small></div>
+    <div id="menu" class="menu"></div>
+    <div class="tray"><div><small>YOUR BENCH</small><div id="tray">Tap a station to prepare food</div></div><button id="clear">Clear</button></div>
+    <p id="feedback" class="feedback">Ready when you are, boss.</p>
+    <button id="start" class="primary">OPEN SHOP →</button>
+  </section>
+  <section class="roadmap"><b>From the local kebab shop to a national empire.</b><span>Sydney → Melbourne → Brisbane → Gold Coast → Adelaide → Perth</span></section>
+</main>
+<div id="golden" class="overlay" hidden><section class="modal hsp-modal" role="dialog" aria-modal="true" aria-labelledby="goldenTitle"><small class="eyebrow">RARE ORDER · KITCHEN TIMERS PAUSED</small><h1 id="goldenTitle">🏆 GOLDEN HSP</h1><p>Build the legendary snack pack. Nail three sauce passes to earn the bonus.</p><div class="hsp-box" aria-label="HSP assembly"><div class="hsp-lid">KEBAB RUSH</div><div class="hsp-food"><span class="chips-layer">🍟🍟🍟</span><span class="meat-layer">🥩🥩</span><span class="cheese-layer">🧀</span><span id="sauceLines" class="sauce-lines"></span></div></div><div class="meter"><i id="zone"></i><b id="marker"></b></div><strong id="goldScore">Sauce pass 1 / 3</strong><button id="pour" class="primary">SAUCE!</button></section></div>
+<div id="customOverlay" class="overlay" hidden><section class="modal custom-modal" role="dialog" aria-modal="true" aria-labelledby="customTitle"><small class="eyebrow">YOUR SHOP · YOUR OPERATOR</small><h1 id="customTitle">Make it yours</h1><div id="operatorPreview" class="operator-preview apron-red hat-cap skin-tan"><span class="hat"></span><span class="hair"></span><span class="head"><i class="glasses"></i></span><span class="body"></span><span class="apron"></span></div><form id="customForm"><label>Shop name<input id="shopNameInput" maxlength="32" required></label><label>Operator name<input id="operatorNameInput" maxlength="20" required></label><div class="form-grid"><label>Apron<select id="apronSelect"><option value="red">Chilli red</option><option value="navy">Midnight navy</option><option value="gold">Golden HSP</option></select></label><label>Cap<select id="hatSelect"><option value="cap">Shop cap</option><option value="hair">No cap</option></select></label><label>Skin tone<select id="skinSelect"><option value="tan">Tan</option><option value="deep">Deep</option><option value="light">Light</option></select></label><label>Shop colour<select id="themeSelect"><option value="red">Red</option><option value="blue">Blue</option><option value="green">Green</option></select></label></div><label class="check"><input id="glassesCheck" type="checkbox"> Aviator sunglasses</label><button class="primary" type="submit">SAVE LOOK →</button><button id="customClose" class="secondary" type="button">Back</button></form></section></div>
+<div id="upgradesOverlay" class="overlay" hidden><section class="modal upgrades-modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle"><small class="eyebrow">INVEST IN THE SHOP</small><h1 id="upgradeTitle">Upgrade the rush</h1><p id="upgradeWallet"></p><div id="upgradeList" class="upgrade-list"></div><button id="upgradesClose" class="primary">BACK TO SHOP →</button></section></div>
+<script type="module" src="/game.js"></script>
+</body>
+</html>
