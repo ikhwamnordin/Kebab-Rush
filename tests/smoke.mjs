@@ -9,7 +9,7 @@ for(const id of ['start','customers','menu','tray','golden','pour','customOverla
   assert.match(html,new RegExp(`id=["']${id}["']`),`Missing required UI element #${id}`);
 }
 
-for(const hook of ['Golden HSP','kebabRushState','renderUpgrades','applyProfile','startGolden','prepTime']){
+for(const hook of ['Golden HSP','kebabRushState','renderUpgrades','applyProfile','startGolden','prepTime','tickPrep','queue:[]']){
   assert.ok(game.includes(hook),`Missing gameplay hook: ${hook}`);
 }
 
