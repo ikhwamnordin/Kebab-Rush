@@ -1,0 +1,65 @@
+# Kebab Rush cloud setup
+
+Kebab Rush v0.3 keeps the static game on GitHub Pages and runs accounts, cloud saves and the national leaderboard through a Cloudflare Worker + D1 database.
+
+## What is implemented
+
+- Player registration with a unique display name and 4–12 digit PIN
+- PBKDF2-SHA256 PIN hashing with a per-account random salt
+- 30-day opaque sessions; only a hash of each session token is stored in D1
+- Authenticated score posting
+- National leaderboard based on each player's best shift
+- Server-side score bounds/validation for the playtest
+- Cloud progress GET/PUT endpoints with revision checks
+- CORS restricted to the Kebab Rush GitHub Pages origin and local Vite development
+- Local profile and local leaderboard remain available when the cloud API is offline
+
+## Cloudflare resources
+
+Create one D1 database named `kebab-rush-db` and note its database ID. For Sydney/Australian playtesting, Cloudflare's D1 creation flow supports an Oceania location hint if you want to keep the primary database close to the first player base.
+
+Create a scoped Cloudflare API token for this project. It needs permission to deploy/edit Workers and **D1 Edit** permission to apply the remote schema. Restrict the token to the specific Cloudflare account wherever possible. Note the Cloudflare account ID.
+
+## GitHub Actions secrets
+
+In the Kebab-Rush repository, add these Actions secrets:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_D1_DATABASE_ID`
+
+The `Deploy Kebab Rush cloud API` workflow will substitute the D1 database ID into a temporary Wrangler config, validate the Worker, apply `server/schema.sql` to the remote D1 database, then deploy `server/worker.js`.
+
+## Connect the website to the deployed API
+
+After the first Worker deployment, copy the HTTPS Worker origin, for example `https://<worker>.<workers-subdomain>.workers.dev`.
+
+For a one-device test, open Kebab Rush once with `?api=<encoded-worker-origin>` appended to the game URL. The client stores that origin locally and uses it on later visits.
+
+For the public release, add an Actions repository **variable** named `KEBAB_RUSH_API_URL` containing the HTTPS Worker origin (no path). The Pages workflow validates the API and injects the origin into the build automatically. Rerun the cloud API workflow to verify D1 and CORS, then run **Build and deploy Kebab Rush**. Do not put Cloudflare tokens, database IDs or other secrets in the frontend.
+
+## API routes
+
+- `GET /health`
+- `POST /v1/register`
+- `POST /v1/login`
+- `POST /v1/logout`
+- `GET /v1/me`
+- `POST /v1/scores`
+- `GET /v1/leaderboard`
+- `GET /v1/progress`
+- `PUT /v1/progress`
+
+## Playtest security note
+
+This is a game account system, not an identity provider. PINs are hashed and sessions are server-side, but the first live playtest still uses client-reported gameplay scores with server-side bounds. Stronger anti-cheat should move scoring events or signed shift summaries to the server before any competitive/prize leaderboard is introduced.
+
+## Release order
+
+1. Add the three Actions secrets above. Store tokens only in GitHub Secrets, never in chat or source files.
+2. Merge PR #12 after CI passes. The API workflow then applies the idempotent schema and deploys the Worker; Pages can remain in local mode until its API variable is set.
+3. Copy the deployed Worker origin from the deployment log into the `KEBAB_RUSH_API_URL` repository variable.
+4. Run **Deploy Kebab Rush cloud API** on `main` again. Its verification step checks the database-backed health endpoint, leaderboard, and GitHub Pages CORS headers.
+5. Run **Build and deploy Kebab Rush** on `main` to connect the public client.
+
+Deployments are serialized so two runs cannot modify D1 concurrently. A missing secret fails before remote changes. Applying the existing schema is additive (`CREATE ... IF NOT EXISTS`); future schema alterations need explicit migrations.

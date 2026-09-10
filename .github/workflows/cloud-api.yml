@@ -1,0 +1,83 @@
+name: Deploy Kebab Rush cloud API
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'wrangler.jsonc'
+      - '.github/workflows/cloud-api.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kebab-rush-cloud-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate Worker syntax
+        run: node --check server/worker.js
+
+      - name: Prepare Wrangler config
+        env:
+          D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          for (const key of ['D1_DATABASE_ID', 'CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID']) {
+            if (!process.env[key]) throw new Error(`Missing Actions secret: ${key === 'D1_DATABASE_ID' ? 'CLOUDFLARE_D1_DATABASE_ID' : key}`);
+          }
+          if (!/^[a-f0-9-]{36}$/i.test(process.env.D1_DATABASE_ID)) throw new Error('Invalid D1 database ID');
+          if (!/^[a-f0-9]{32}$/i.test(process.env.CLOUDFLARE_ACCOUNT_ID)) throw new Error('Invalid Cloudflare account ID');
+          const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
+          config.d1_databases[0].database_id = process.env.D1_DATABASE_ID;
+          fs.writeFileSync('wrangler.ci.jsonc', JSON.stringify(config));
+          NODE
+
+      - name: Apply database schema
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.92.0 d1 execute kebab-rush-db --remote --file=server/schema.sql --config=wrangler.ci.jsonc
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.92.0 deploy --config=wrangler.ci.jsonc
+
+      - name: Verify deployed API and database
+        if: ${{ vars.KEBAB_RUSH_API_URL != '' }}
+        env:
+          API_URL: ${{ vars.KEBAB_RUSH_API_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const origin = new URL(process.env.API_URL);
+          if (origin.protocol !== 'https:' || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) throw new Error('KEBAB_RUSH_API_URL must be an HTTPS origin');
+          for (const path of ['/health', '/v1/leaderboard']) {
+            const response = await fetch(new URL(path, origin), { headers: { Origin: 'https://ikhwamnordin.github.io' }, signal: AbortSignal.timeout(15000) });
+            if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+            if (response.headers.get('access-control-allow-origin') !== 'https://ikhwamnordin.github.io') throw new Error('GitHub Pages CORS check failed');
+            const data = await response.json();
+            if (path === '/health' ? data.ok !== true : !Array.isArray(data.entries)) throw new Error(`Unexpected response from ${path}`);
+          }
+          NODE
+
+      - name: First deployment next step
+        if: ${{ vars.KEBAB_RUSH_API_URL == '' }}
+        run: echo 'Worker deployed. Set the repository variable KEBAB_RUSH_API_URL to the HTTPS Worker origin shown above, rerun this workflow to verify it, then run Build and deploy Kebab Rush.' >> "$GITHUB_STEP_SUMMARY"

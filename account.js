@@ -1,26 +1,32 @@
-const accountOpen=document.getElementById('accountOpen');
-const accountOverlay=document.getElementById('accountOverlay');
-const accountClose=document.getElementById('accountClose');
-const accountForm=document.getElementById('accountForm');
-const playerName=document.getElementById('playerName');
-const playerStatus=document.getElementById('playerStatus');
-const scoresOpen=document.getElementById('scoresOpen');
-const scoresOverlay=document.getElementById('scoresOverlay');
-const scoresClose=document.getElementById('scoresClose');
-const scoresRows=document.getElementById('scoresRows');
-const scoresStatus=document.getElementById('scoresStatus');
-const scoreMode=document.getElementById('scoreMode');
-const cloudSignIn=document.getElementById('cloudSignIn');
+const $=id=>document.getElementById(id);
+const accountOpen=$('accountOpen'),accountOverlay=$('accountOverlay'),accountClose=$('accountClose'),accountForm=$('accountForm'),playerName=$('playerName'),playerStatus=$('playerStatus');
+const scoresOpen=$('scoresOpen'),scoresOverlay=$('scoresOverlay'),scoresClose=$('scoresClose'),scoresRows=$('scoresRows'),scoresStatus=$('scoresStatus'),scoreMode=$('scoreMode');
+const cloudName=$('cloudName'),cloudPin=$('cloudPin'),cloudRegister=$('cloudRegister'),cloudLogin=$('cloudLogin'),cloudLogout=$('cloudLogout'),cloudStatus=$('cloudStatus'),cloudMode=$('cloudMode');
+const urlApi=new URLSearchParams(location.search).get('api');
+if(urlApi&&/^https:\/\//.test(urlApi))localStorage.setItem('kebabRushApiBase',urlApi.replace(/\/$/,''));
+const configuredApi=(document.querySelector('meta[name="kebab-rush-api"]')?.content||localStorage.getItem('kebabRushApiBase')||'').replace(/\/$/,'');
+let cloudPlayer=null,scoreLoading=false;
+const TOKEN_KEY='kebabRushCloudSession';
 function loadPlayer(){try{return JSON.parse(localStorage.getItem('kebabRushPlayer')||'{}')}catch{return {}}}
-function savePlayer(name){const player={name:name.trim()||'Guest',mode:'local'};localStorage.setItem('kebabRushPlayer',JSON.stringify(player));return player}
-function syncAccount(){const p=loadPlayer();playerName.value=p.name||'';playerStatus.textContent=p.name?`Playing locally as ${p.name}`:'Guest mode · progress stays on this device';accountOpen.textContent=p.name?p.name:'Account'}
+function savePlayer(name,mode='local'){const player={name:name.trim()||'Guest',mode};localStorage.setItem('kebabRushPlayer',JSON.stringify(player));return player}
+function token(){return localStorage.getItem(TOKEN_KEY)||''}
+function setToken(value){value?localStorage.setItem(TOKEN_KEY,value):localStorage.removeItem(TOKEN_KEY)}
 function localScores(){try{return JSON.parse(localStorage.getItem('kebabRushScores')||'[]')}catch{return []}}
-function renderScores(){const rows=localScores().sort((a,b)=>b.takings-a.takings||b.served-a.served).slice(0,10);scoresRows.replaceChildren();rows.forEach((row,index)=>{const tr=document.createElement('tr');for(const value of [index+1,row.player,row.shop,`$${row.takings}`,row.served]){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}scoresRows.appendChild(tr)});scoresStatus.textContent=rows.length?'Best shifts saved on this device.':'No scores yet — finish a shift to post your first score.';scoreMode.textContent='LOCAL SCOREBOARD'}
-accountOpen.onclick=()=>{syncAccount();accountOverlay.hidden=false;playerName.focus()};
+function apiReady(){return Boolean(configuredApi)}
+async function api(path,options={}){if(!apiReady())throw Error('Cloud API is not deployed yet.');const headers={'content-type':'application/json',...(options.headers||{})};if(token())headers.authorization=`Bearer ${token()}`;const response=await fetch(configuredApi+path,{...options,headers,cache:'no-store'});let data={};try{data=await response.json()}catch{}if(!response.ok)throw Error(data.error||`Cloud request failed (${response.status}).`);return data}
+function syncAccount(){const local=loadPlayer(),name=cloudPlayer?.name||local.name||'';playerName.value=local.name||cloudPlayer?.name||'';cloudName.value=cloudPlayer?.name||local.name||'';playerStatus.textContent=cloudPlayer?`Cloud account · ${cloudPlayer.name}`:local.name?`Playing locally as ${local.name}`:'Guest mode · progress stays on this device';accountOpen.textContent=name||'Account';cloudLogout.hidden=!cloudPlayer;cloudRegister.hidden=Boolean(cloudPlayer);cloudLogin.hidden=Boolean(cloudPlayer);cloudName.disabled=Boolean(cloudPlayer);cloudPin.disabled=Boolean(cloudPlayer);if(cloudPlayer){cloudMode.textContent='ONLINE';cloudStatus.textContent='Signed in. New shift scores will post to the live leaderboard.'}else if(apiReady()){cloudMode.textContent='CLOUD READY';cloudStatus.textContent='Create an account or sign in. Your PIN is sent only to the secure game API and is never stored in this browser.'}else{cloudMode.textContent='SETUP PENDING';cloudStatus.textContent='The cloud client is installed, but the API has not been connected to this build yet.'}}
+function renderLocalScores(){const rows=localScores().sort((a,b)=>b.takings-a.takings||b.served-a.served).slice(0,10);scoresRows.replaceChildren();rows.forEach((row,index)=>addScoreRow([index+1,row.player,row.shop,`$${row.takings}`,row.served],false));scoresStatus.textContent=rows.length?'Best shifts saved on this device.':'No scores yet — finish a shift to post your first score.';scoreMode.textContent='LOCAL SCOREBOARD'}
+function addScoreRow(values,isYou){const tr=document.createElement('tr');if(isYou)tr.className='is-you';for(const value of values){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}scoresRows.appendChild(tr)}
+async function renderScores(){if(scoreLoading)return;if(!apiReady()){renderLocalScores();return}scoreLoading=true;scoresStatus.textContent='Loading national rankings…';try{const data=await api('/v1/leaderboard?limit=50');scoresRows.replaceChildren();for(const row of data.entries)addScoreRow([row.rank,`${row.player}${row.isYou?' · YOU':''}`,row.shop,`$${row.takings}`,row.served],Boolean(row.isYou));scoreMode.textContent='LIVE · AUSTRALIA';scoresStatus.textContent=data.entries.length?`${data.entries.length} ranked player${data.entries.length===1?'':'s'} · updated ${new Date(data.updatedAt).toLocaleTimeString()}`:'No live scores yet — be the first.';if(data.mine)scoresStatus.textContent+=` · Your rank #${data.mine.rank}`;}catch(error){renderLocalScores();scoresStatus.textContent=`Live board unavailable: ${error.message} Showing this device instead.`}finally{scoreLoading=false}}
+async function authenticate(mode){const name=cloudName.value.trim(),pin=cloudPin.value.trim();if(name.length<3){cloudStatus.textContent='Use at least 3 characters for your player name.';return}if(!/^\d{4,12}$/.test(pin)){cloudStatus.textContent='PIN must be 4–12 digits.';return}cloudRegister.disabled=cloudLogin.disabled=true;cloudStatus.textContent=mode==='register'?'Creating secure account…':'Signing in…';try{const data=await api(mode==='register'?'/v1/register':'/v1/login',{method:'POST',body:JSON.stringify({name,pin})});setToken(data.token);cloudPlayer=data.player;savePlayer(data.player.name,'cloud');cloudPin.value='';syncAccount();await renderScores()}catch(error){cloudStatus.textContent=error.message}finally{cloudRegister.disabled=cloudLogin.disabled=false}}
+async function restoreSession(){if(!apiReady()||!token()){syncAccount();return}try{const data=await api('/v1/me');cloudPlayer=data.player;savePlayer(data.player.name,'cloud')}catch{setToken('');cloudPlayer=null}syncAccount()}
+async function logout(){cloudStatus.textContent='Signing out…';try{if(apiReady()&&token())await api('/v1/logout',{method:'POST'})}catch{}setToken('');cloudPlayer=null;const local=loadPlayer();if(local.name)savePlayer(local.name,'local');syncAccount();renderLocalScores()}
+async function postCloudScore(entry){if(!apiReady()||!token())return;try{await api('/v1/scores',{method:'POST',body:JSON.stringify({takings:entry.takings,served:entry.served,missed:Math.min(3,Number(entry.missed)||0),shift:entry.shift,shop:entry.shop})});if(!scoresOverlay.hidden)await renderScores()}catch(error){console.warn('Cloud score post failed:',error.message)}}
+accountOpen.onclick=()=>{syncAccount();accountOverlay.hidden=false;(cloudPlayer?playerName:cloudName).focus()};
 accountClose.onclick=()=>{accountOverlay.hidden=true;accountOpen.focus()};
-accountForm.onsubmit=e=>{e.preventDefault();const p=savePlayer(playerName.value);syncAccount();playerStatus.textContent=`Saved. You are playing locally as ${p.name}.`};
-scoresOpen.onclick=()=>{renderScores();scoresOverlay.hidden=false;scoresClose.focus()};
-scoresClose.onclick=()=>{scoresOverlay.hidden=true;scoresOpen.focus()};
-window.addEventListener('kebab-rush-score',renderScores);
-cloudSignIn.onclick=()=>{playerStatus.textContent='Cloud sign-in is not connected yet. The UI is ready; a secure backend is still required.'};
-syncAccount();renderScores();
+accountForm.onsubmit=e=>{e.preventDefault();const p=savePlayer(playerName.value,cloudPlayer?'cloud':'local');syncAccount();playerStatus.textContent=cloudPlayer?`Local display updated. Cloud identity remains ${cloudPlayer.name}.`:`Saved. You are playing locally as ${p.name}.`};
+cloudRegister.onclick=()=>authenticate('register');cloudLogin.onclick=()=>authenticate('login');cloudLogout.onclick=logout;
+scoresOpen.onclick=async()=>{scoresOverlay.hidden=false;scoresClose.focus();await renderScores()};scoresClose.onclick=()=>{scoresOverlay.hidden=true;scoresOpen.focus()};
+window.addEventListener('kebab-rush-score',event=>{renderLocalScores();postCloudScore(event.detail)});
+window.KebabRushCloud={apiBase:configuredApi,isConfigured:apiReady,player:()=>cloudPlayer,refreshScores:renderScores};
+renderLocalScores();restoreSession();
