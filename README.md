@@ -2,30 +2,46 @@
 
 **From the local kebab shop to a national empire.**
 
-Kebab Rush is an Australian food-shop management game in the Rush universe, built as the sister title to Mamak Rush.
+Kebab Rush is a mobile-first Australian food-shop management game in the Rush universe and a sister title to Mamak Rush.
 
-## v0.1 direction
+## Current playable prototype
 
-- Start with a humble Sydney suburban kebab shop
-- Customise your kebab-shop operator and shop name
-- Prepare kebabs, HSPs, chips, falafel and drinks
-- Serve Australian customer archetypes through increasingly busy rush periods
-- Earn cash and XP to upgrade equipment, staff and the shop
-- Trigger special events including the Golden HSP order
-- Build toward shop customisation, sponsorship surfaces, social-share cards, accounts and live leaderboards
-- Expand from Sydney to cities across Australia
+The current development build starts in a late-night Sydney suburban kebab shop and includes:
 
-## Design principles
+- 90-second rush shifts with takings, served orders and walk-outs
+- Chicken kebabs, HSPs, hot chips and falafel rolls
+- Tradies, uni students, office workers and footy-fan customers with local names
+- A visible kebab-shop interior with rotisserie, ingredient rail, drinks fridge, counter and dining tables
+- A customisable operator with apron, cap, skin tone and aviator options
+- Player-defined shop and operator names plus shop-sign colour themes
+- Persistent wallet, shop progress and upgrades via local storage
+- Functional rotisserie, fryer and seating upgrades
+- Rare Golden HSP sauce-timing challenge with the shift clock paused
+- Rotating Australian rush-night event banners
+- Sydney-to-national expansion roadmap
 
-Kebab Rush keeps the fast, approachable management loop of Mamak Rush while giving Australia its own food, humour, customers, locations and events.
+## Run locally
 
-### Planned locations
+```bash
+npm install
+npm run dev
+```
 
-Sydney · Melbourne · Brisbane · Gold Coast · Adelaide · Perth
+Open the local Vite address in a browser. The interface is designed for both desktop and mobile-width testing.
 
-### Planned events
+## Gameplay loop
 
-Friday Night Rush · State of Origin · AFL/NRL Finals · Uni Night · Rainstorm · Delivery Surge · Public Holiday
+Open shop → tap prep stations → match the food on your bench to a customer's order → tap the customer to serve → earn cash and tips → bank takings → buy upgrades → survive busier shifts.
+
+## Visual direction
+
+Kebab Rush uses a colourful diorama-style late-night Australian kebab-shop presentation: street lights, an illuminated shop sign, visible rotisserie and prep counter, customers inside the scene, a customisable operator, HSP assembly visuals and upgrade-driven progression.
+
+## Expansion roadmap
+
+Sydney → Melbourne → Brisbane → Gold Coast → Adelaide → Perth
+
+Planned future systems include sponsorship surfaces, social-share cards, account sign-in, live leaderboards, richer character art, location unlocks and additional events.
 
 ---
 
